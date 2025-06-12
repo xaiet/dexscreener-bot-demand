@@ -7,26 +7,29 @@ from telegram.ext import Dispatcher, CommandHandler, CallbackContext
 # Variables d'entorn
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "ruta-secreta")
+BIRDEYE_API_KEY = os.getenv("BIRDEYE_API_KEY")
 bot = Bot(token=BOT_TOKEN)
 
-# Inici Flask
 app = Flask(__name__)
 
-# Obtenir parelles de l'API i filtrar per Solana
-def get_solana_pairs():
-    url = "https://api.dexscreener.com/latest/dex/pairs"
+# Obtenir tokens nous de Solana via Birdeye
+def get_new_solana_tokens(limit=10):
+    url = "https://public-api.birdeye.so/defi/tokenlist?sort_by=created_at"
+    headers = {"x-api-key": BIRDEYE_API_KEY}
     try:
-        res = requests.get(url, timeout=10)
+        res = requests.get(url, headers=headers, timeout=10)
         if res.status_code != 200:
+            print("Error API Birdeye:", res.text)
             return []
-        return res.json().get("pairs", [])
+        data = res.json().get("data", [])
+        return data[:limit]
     except Exception as e:
-        print("Error obtenint parelles:", e)
+        print("Excepció Birdeye:", e)
         return []
 
-
-# Format de Market Cap
+# Format Market Cap
 def format_market_cap(mcap):
+    if not mcap: return "?"
     if mcap > 1_000_000:
         return f"${round(mcap / 1_000_000, 2)}M"
     elif mcap > 1_000:
@@ -34,52 +37,50 @@ def format_market_cap(mcap):
     else:
         return f"${int(mcap)}"
 
-# Filtrar parelles amb criteris amplis
-def filter_pairs(pairs):
-    tokens_bons = []
-    for p in pairs:
-        try:
-            liquidity = float(p.get("liquidityUsd", 0))
-            volume = float(p.get("volumeUsd", 0))
-            change = float(p.get("priceChange", {}).get("h1", 0))
-            mcap = liquidity * 2  # estimació bàsica
-            name = p.get("baseToken", {}).get("name", "Sense nom")
-            url = p.get("url")
-
-            if 15_000 <= mcap <= 30_000_000 and volume > 5_000 and change > -20:
-                tokens_bons.append({
-                    "nom": name,
-                    "mcap": format_market_cap(mcap),
-                    "url": url
-                })
-        except:
-            continue
-    return tokens_bons
-
-# Comandes de Telegram
+# Comandes Telegram
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Hola! Envia /tokens per veure noves gemmes a Solana 🚀")
+    update.message.reply_text("Hola! Envia /tokens per veure els tokens més nous a Solana 🚀")
 
 def tokens(update: Update, context: CallbackContext):
-    update.message.reply_text("🔍 Obtenint parelles recents de Solana sense filtrar...")
-
-    all = get_solana_pairs()
-    if not all:
-        update.message.reply_text("❌ No s'han trobat parelles (ni tan sols sense filtres).")
+    if not BIRDEYE_API_KEY:
+        update.message.reply_text("❌ Falten credencials de Birdeye (BIRDEYE_API_KEY)")
         return
 
-    # Mostrem les 5 primeres parelles sense cap filtre
-    for p in all[:5]:
-        msg = (
-            f"🧪 Nom: {p.get('baseToken', {}).get('name', 'Sense nom')}\n"
-            f"🔗 URL: {p.get('url', 'No disponible')}\n"
-            f"💧 Liquidity: {p.get('liquidityUsd', 0)}\n"
-            f"📊 Volume 24h: {p.get('volumeUsd', 0)}\n"
-            f"📈 Change 1h: {p.get('priceChange', {}).get('h1', 'n/a')}"
-        )
-        update.message.reply_text(msg)
+    update.message.reply_text("🔍 Buscant els últims tokens creats a Solana...")
 
-# Dispatcher i handlers
+    tokens = get_new_solana_tokens(limit=20)
+    mostrats = 0
+
+    for t in tokens:
+        try:
+            name = t.get("name", "Sense nom")
+            symbol = t.get("symbol", "")
+            address = t.get("address", "N/A")
+            mcap = t.get("market_cap", 0)
+            liquidity = t.get("liquidity", 0)
+            price = t.get("price_usd", "?")
+
+            # Filtres opcionals
+            if liquidity < 10000 or mcap < 50000:
+                continue
+
+            msg = (
+                f"🚀 {name} ({symbol})\n"
+                f"📍 {address}\n"
+                f"💧 Liquidity: ${round(liquidity):,}\n"
+                f"📈 Market Cap: {format_market_cap(mcap)}\n"
+                f"💵 Price: ${price}\n"
+                f"🔗 https://birdeye.so/token/{address}?chain=solana"
+            )
+            update.message.reply_text(msg)
+            mostrats += 1
+        except:
+            continue
+
+    if mostrats == 0:
+        update.message.reply_text("No s'han trobat tokens que compleixin els filtres.")
+
+# Dispatcher
 dispatcher = Dispatcher(bot, update_queue=None, use_context=True)
 dispatcher.add_handler(CommandHandler("start", start))
 dispatcher.add_handler(CommandHandler("tokens", tokens))
@@ -93,9 +94,9 @@ def webhook():
 
 @app.route("/", methods=["GET"])
 def home():
-    return "Bot actiu 🚀"
+    return "Bot actiu amb Birdeye 🚀"
 
-# Inici de l'app Flask
+# Inici de l'app
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
