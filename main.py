@@ -11,17 +11,20 @@ BIRDEYE_API_KEY = os.getenv("BIRDEYE_API_KEY")
 bot = Bot(token=BOT_TOKEN)
 app = Flask(__name__)
 
-# Obtenim tokens actius segons docs
-def get_active_tokens(limit=10):
-    url = ("https://public-api.birdeye.so/defi/tokenlist"
-           "?sort_by=v24hUSD&sort_type=desc&offset=0&limit=50&min_liquidity=2000")
+# Obtenir tokens
+def get_tokens_raw(limit=50):
+    url = (
+        "https://public-api.birdeye.so/defi/tokenlist"
+        "?sort_by=v24hUSD&sort_type=desc&offset=0"
+        f"&limit={limit}&min_liquidity=2000"
+    )
     headers = {"x-api-key": BIRDEYE_API_KEY}
     try:
         r = requests.get(url, headers=headers, timeout=10)
         if r.status_code != 200:
             print("Error Birdeye:", r.text)
             return []
-        return r.json().get("data", {}).get("tokens", [])[:limit]
+        return r.json().get("data", {}).get("tokens", [])
     except Exception as e:
         print("Excepció Birdeye:", e)
         return []
@@ -38,46 +41,55 @@ def format_mcap(m):
 
 # Comandes
 def start(update: Update, ctx):
-    update.message.reply_text("Envia /tokens per veure tokens petits i actius a Solana 🚀")
+    update.message.reply_text("Hola! Envia /tokens per veure tokens actius a Solana 🪙")
 
 def tokens(update: Update, ctx):
     if not BIRDEYE_API_KEY:
-        return update.message.reply_text("❌ Falta la clau BIRDEYE_API_KEY")
+        return update.message.reply_text("❌ Falten credencials: BIRDEYE_API_KEY")
 
-    update.message.reply_text("🔍 Cercant tokens potents segons v24hUSD...")
-    items = get_active_tokens(limit=10)
+    update.message.reply_text("🔍 Cercant tokens amb activitat raonable a Solana...")
+    tokens = get_tokens_raw(limit=50)
     mostrats = 0
 
-    for t in items:
-        if t.get("chain") != "solana": continue  # només Solana
-        name = t.get("name") or t.get("symbol","")
-        address = t.get("address")
-        liquidity = t.get("liquidity") or 0
-        mcap = t.get("market_cap") or 0
-        volume = t.get("v24hUSD") or 0
-        price = t.get("price_usd")
+    for t in tokens:
+        if t.get("chain") != "solana":
+            continue
+
+        liquidity = t.get("liquidity", 0)
+        mcap = t.get("market_cap", 0)
+        vol = t.get("v24hUSD", 0)
+
+        if liquidity < 2000 or mcap > 10_000_000 or vol < 1000:
+            continue
+
+        name = t.get("name", "Sense nom")
+        symbol = t.get("symbol", "")
+        address = t.get("address", "")
+        price = t.get("price_usd", "?")
 
         msg = (
-            f"🚀 {name}\n"
+            f"🚀 {name} ({symbol})\n"
             f"📍 {address}\n"
             f"💧 Liquidity: ${round(liquidity):,}\n"
             f"📈 Market Cap: {format_mcap(mcap)}\n"
-            f"📊 Vol 24h: ${round(volume):,}\n"
+            f"📊 Vol 24h: ${round(vol):,}\n"
             f"💵 Price: ${price}\n"
             f"🔗 https://birdeye.so/token/{address}?chain=solana"
         )
         update.message.reply_text(msg)
         mostrats += 1
+        if mostrats >= 5:
+            break
 
-    if not mostrats:
-        update.message.reply_text("No s'han trobat tokens actius a Solana amb aquests filtres.")
+    if mostrats == 0:
+        update.message.reply_text("No s'ha trobat cap token actiu amb aquests criteris.")
 
-# Dispatcher & Handlers
+# Dispatcher
 dispatcher = Dispatcher(bot, update_queue=None, use_context=True)
 dispatcher.add_handler(CommandHandler("start", start))
 dispatcher.add_handler(CommandHandler("tokens", tokens))
 
-# Webhook segur
+# Webhook
 @app.route(f"/{WEBHOOK_SECRET}", methods=["POST"])
 def webhook():
     d = Update.de_json(request.get_json(force=True), bot)
@@ -86,7 +98,7 @@ def webhook():
 
 @app.route("/")
 def home():
-    return "Bot actiu amb Birdeye 🚀"
+    return "Bot actiu amb Birdeye ✅"
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT",5000)))
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
