@@ -9,15 +9,16 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "ruta-secreta")
 bot = Bot(token=BOT_TOKEN)
 
-# Inici Flask
+# Flask app
 app = Flask(__name__)
 
-# Obtenir parelles de Dexscreener
-def get_pairs():
-    res = requests.get("https://api.dexscreener.com/latest/dex/pairs/solana")
+# Obtenir parelles noves a Solana
+def get_solana_pairs():
+    url = "https://api.dexscreener.com/latest/dex/pairs/solana"
+    res = requests.get(url)
     return res.json().get("pairs", []) if res.status_code == 200 else []
 
-# Format market cap
+# Format Market Cap
 def format_market_cap(mcap):
     if mcap > 1_000_000:
         return f"${round(mcap / 1_000_000, 2)}M"
@@ -26,21 +27,21 @@ def format_market_cap(mcap):
     else:
         return f"${int(mcap)}"
 
-# Filtrar parelles (amb filtres molt amplis)
+# Filtrar parelles de Solana
 def filter_pairs(pairs):
     resultats = []
     for p in pairs:
         try:
             liquidity = float(p.get("liquidityUsd", 0))
-            mcap = liquidity * 2
             volume = float(p.get("volumeUsd", 0))
             change = float(p.get("priceChange", {}).get("h1", 0))
-            nom = p.get("baseToken", {}).get("name", "Sense nom")
+            mcap = liquidity * 2  # estimació simple
+            name = p.get("baseToken", {}).get("name", "Sense nom")
             url = p.get("url")
 
-            if 50_000 <= mcap <= 20_000_000 and volume >= 10_000 and change > -10:
+            if 15_000 <= mcap <= 30_000_000 and volume > 5_000 and change > -15:
                 resultats.append({
-                    "nom": nom,
+                    "nom": name,
                     "mcap": format_market_cap(mcap),
                     "url": url
                 })
@@ -50,28 +51,28 @@ def filter_pairs(pairs):
 
 # Comandes Telegram
 def start(update: Update, context: CallbackContext):
-    update.message.reply_text("Hola! Envia /tokens per veure criptos prometedores 🚀")
+    update.message.reply_text("Hola! Envia /tokens per veure noves gemmes a Solana 🚀")
 
 def tokens(update: Update, context: CallbackContext):
-    update.message.reply_text("🔍 Cercant tokens amb potencial...")
-    results = filter_pairs(get_pairs())
+    update.message.reply_text("🔍 Buscant tokens recents a Solana...")
+    results = filter_pairs(get_solana_pairs())
     if results:
         for p in results:
             msg = (
                 f"🚀 {p['nom']}\n"
-                f"📈 Market Cap: {p['mcap']}\n"
+                f"📈 Market Cap estimat: {p['mcap']}\n"
                 f"🔗 {p['url']}"
             )
             update.message.reply_text(msg)
     else:
-        update.message.reply_text("No s'han trobat tokens.")
+        update.message.reply_text("No s'han trobat tokens que compleixin els filtres.")
 
 # Dispatcher
 dispatcher = Dispatcher(bot, update_queue=None, use_context=True)
 dispatcher.add_handler(CommandHandler("start", start))
 dispatcher.add_handler(CommandHandler("tokens", tokens))
 
-# Webhook amb ruta secreta
+# Webhook segur
 @app.route(f"/{WEBHOOK_SECRET}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
@@ -82,7 +83,7 @@ def webhook():
 def home():
     return "Bot actiu 🚀"
 
-# Executar Flask
+# Inici servidor Flask
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
