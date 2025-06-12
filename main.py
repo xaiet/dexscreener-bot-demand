@@ -21,7 +21,7 @@ def get_active_tokens(limit=10):
         if r.status_code != 200:
             print("Error Birdeye:", r.text)
             return []
-        return r.json().get("data", [])[:limit]
+        return r.json().get("data", {}).get("tokens", [])[:limit]
     except Exception as e:
         print("Excepció Birdeye:", e)
         return []
