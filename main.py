@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 # Obtenir tokens nous de Solana via Birdeye
 def get_new_solana_tokens(limit=10):
-    url = "https://public-api.birdeye.so/defi/tokenlist?sort_by=created_at"
+    url = "https://public-api.birdeye.so/defi/tokenlist?sort_by=liquidity&order=desc"
     headers = {"x-api-key": BIRDEYE_API_KEY}
     try:
         res = requests.get(url, headers=headers, timeout=10)
