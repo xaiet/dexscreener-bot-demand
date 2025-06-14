@@ -29,7 +29,8 @@ def get_tokens_raw(limit=50):
         data = r.json()
         tokens = data.get("data", {}).get("tokens", [])
         print(f"[LOG] Tokens rebuts: {len(tokens)}")
-        print("[LOG] Primer token (exemple):", tokens[0] if tokens else "Cap")
+        if tokens:
+            print("[LOG] Primer token (exemple):", tokens[0])
         return tokens
     except Exception as e:
         print("[LOG] Excepció durant la crida a Birdeye:", e)
@@ -47,7 +48,7 @@ def format_mcap(m):
 
 # Comandes
 def start(update: Update, ctx):
-    update.message.reply_text("Hola! Envia /tokens per veure tokens actius a Solana 🪙")
+    update.message.reply_text("Hola! Envia /tokens per veure tokens actius 🪙")
 
 def tokens(update: Update, ctx):
     if not BIRDEYE_API_KEY:
@@ -59,15 +60,14 @@ def tokens(update: Update, ctx):
     mostrats = 0
 
     for t in tokens:
-        if t.get("chain") != "solana":
-            continue
+        print("[LOG] Camps del token:", t.keys())  # Debug útil
 
         name = t.get("name", "Sense nom")
         symbol = t.get("symbol", "")
         address = t.get("address", "")
-        price = t.get("price_usd", "?")
+        price = t.get("price", "?")
         liquidity = t.get("liquidity", 0)
-        mcap = t.get("market_cap", 0)
+        mcap = t.get("mc", 0)
         vol = t.get("v24hUSD", 0)
 
         print(f"[LOG] Mostrant token: {name} ({symbol})")
@@ -78,7 +78,7 @@ def tokens(update: Update, ctx):
             f"💧 Liquidity: ${round(liquidity):,}\n"
             f"📈 Market Cap: {format_mcap(mcap)}\n"
             f"📊 Vol 24h: ${round(vol):,}\n"
-            f"💵 Price: ${price}\n"
+            f"💵 Price: ${round(price, 4) if isinstance(price, float) else price}\n"
             f"🔗 https://birdeye.so/token/{address}?chain=solana"
         )
         update.message.reply_text(msg)
@@ -88,7 +88,7 @@ def tokens(update: Update, ctx):
 
     if mostrats == 0:
         print("[LOG] Cap token mostrat.")
-        update.message.reply_text("No s'ha trobat cap token de Solana.")
+        update.message.reply_text("No s'ha trobat cap token.")
 
 # Dispatcher
 dispatcher = Dispatcher(bot, update_queue=None, use_context=True)
