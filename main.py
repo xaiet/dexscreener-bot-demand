@@ -11,22 +11,28 @@ BIRDEYE_API_KEY = os.getenv("BIRDEYE_API_KEY")
 bot = Bot(token=BOT_TOKEN)
 app = Flask(__name__)
 
-# Obtenir tokens
+# Obtenir tokens (amb logs)
 def get_tokens_raw(limit=50):
     url = (
         "https://public-api.birdeye.so/defi/tokenlist"
         "?sort_by=v24hUSD&sort_type=desc&offset=0"
-        f"&limit={limit}&min_liquidity=2000"
+        f"&limit={limit}"
     )
     headers = {"x-api-key": BIRDEYE_API_KEY}
     try:
+        print("[LOG] Cridant Birdeye API...")
         r = requests.get(url, headers=headers, timeout=10)
+        print(f"[LOG] Status code: {r.status_code}")
         if r.status_code != 200:
-            print("Error Birdeye:", r.text)
+            print("[LOG] Error de resposta:", r.text)
             return []
-        return r.json().get("data", {}).get("tokens", [])
+        data = r.json()
+        tokens = data.get("data", {}).get("tokens", [])
+        print(f"[LOG] Tokens rebuts: {len(tokens)}")
+        print("[LOG] Primer token (exemple):", tokens[0] if tokens else "Cap")
+        return tokens
     except Exception as e:
-        print("Excepció Birdeye:", e)
+        print("[LOG] Excepció durant la crida a Birdeye:", e)
         return []
 
 # Format Market Cap
@@ -45,9 +51,10 @@ def start(update: Update, ctx):
 
 def tokens(update: Update, ctx):
     if not BIRDEYE_API_KEY:
+        print("[LOG] Falta la BIRDEYE_API_KEY")
         return update.message.reply_text("❌ Falten credencials: BIRDEYE_API_KEY")
 
-    update.message.reply_text("🔍 Cercant tokens amb activitat raonable a Solana...")
+    update.message.reply_text("🔍 Cercant tokens a Solana (logs activats)...")
     tokens = get_tokens_raw(limit=50)
     mostrats = 0
 
@@ -55,17 +62,15 @@ def tokens(update: Update, ctx):
         if t.get("chain") != "solana":
             continue
 
-        liquidity = t.get("liquidity", 0)
-        mcap = t.get("market_cap", 0)
-        vol = t.get("v24hUSD", 0)
-
-        if liquidity < 2000 or mcap > 10_000_000 or vol < 1000:
-            continue
-
         name = t.get("name", "Sense nom")
         symbol = t.get("symbol", "")
         address = t.get("address", "")
         price = t.get("price_usd", "?")
+        liquidity = t.get("liquidity", 0)
+        mcap = t.get("market_cap", 0)
+        vol = t.get("v24hUSD", 0)
+
+        print(f"[LOG] Mostrant token: {name} ({symbol})")
 
         msg = (
             f"🚀 {name} ({symbol})\n"
@@ -82,7 +87,8 @@ def tokens(update: Update, ctx):
             break
 
     if mostrats == 0:
-        update.message.reply_text("No s'ha trobat cap token actiu amb aquests criteris.")
+        print("[LOG] Cap token mostrat.")
+        update.message.reply_text("No s'ha trobat cap token de Solana.")
 
 # Dispatcher
 dispatcher = Dispatcher(bot, update_queue=None, use_context=True)
@@ -101,4 +107,5 @@ def home():
     return "Bot actiu amb Birdeye ✅"
 
 if __name__ == "__main__":
+    print("[LOG] Iniciant servidor Flask...")
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
