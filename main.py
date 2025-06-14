@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 from flask import Flask, request
 from telegram import Bot, Update
@@ -11,7 +12,7 @@ BIRDEYE_API_KEY = os.getenv("BIRDEYE_API_KEY")
 bot = Bot(token=BOT_TOKEN)
 app = Flask(__name__)
 
-# Obtenir tokens (amb logs)
+# Obtenir tokens
 def get_tokens_raw(limit=50):
     url = (
         "https://public-api.birdeye.so/defi/tokenlist"
@@ -48,33 +49,53 @@ def format_mcap(m):
 
 # Comandes
 def start(update: Update, ctx):
-    update.message.reply_text("Hola! Envia /tokens per veure tokens actius 🪙")
+    update.message.reply_text("Hola! Envia /tokens per veure tokens nous actius a Solana 🪙")
 
 def tokens(update: Update, ctx):
     if not BIRDEYE_API_KEY:
         print("[LOG] Falta la BIRDEYE_API_KEY")
         return update.message.reply_text("❌ Falten credencials: BIRDEYE_API_KEY")
 
-    update.message.reply_text("🔍 Cercant tokens a Solana (logs activats)...")
+    update.message.reply_text("🔍 Cercant tokens nous i actius a Solana...")
     tokens = get_tokens_raw(limit=50)
     mostrats = 0
 
-    for t in tokens:
-        print("[LOG] Camps del token:", t.keys())  # Debug útil
+    now = int(time.time())
+    max_age_seconds = 48 * 3600  # 48 hores
 
+    for t in tokens:
         name = t.get("name", "Sense nom")
         symbol = t.get("symbol", "")
         address = t.get("address", "")
-        price = t.get("price", "?")
+        price = t.get("price", 0)
         liquidity = t.get("liquidity", 0)
         mcap = t.get("mc", 0)
         vol = t.get("v24hUSD", 0)
+        created_at = t.get("created_at") or t.get("createdUnixTime")
 
-        print(f"[LOG] Mostrant token: {name} ({symbol})")
+        # FILTRES
+        if not created_at:
+            print(f"[LOG] {symbol} no té data de creació")
+            continue
+        if (now - int(created_at)) > max_age_seconds:
+            print(f"[LOG] {symbol} descartat per ser massa antic")
+            continue
+        if liquidity < 2_000:
+            print(f"[LOG] Descarta {symbol} per baixa liquidesa: {liquidity}")
+            continue
+        if mcap > 10_000_000:
+            print(f"[LOG] Descarta {symbol} per mcap alt: {mcap}")
+            continue
+        if vol < 1_000:
+            print(f"[LOG] Descarta {symbol} per volum baix: {vol}")
+            continue
+
+        print(f"[LOG] Mostrant token NOU: {name} ({symbol})")
 
         msg = (
             f"🚀 {name} ({symbol})\n"
             f"📍 {address}\n"
+            f"🕒 Creat fa: {round((now - int(created_at)) / 3600, 1)} hores\n"
             f"💧 Liquidity: ${round(liquidity):,}\n"
             f"📈 Market Cap: {format_mcap(mcap)}\n"
             f"📊 Vol 24h: ${round(vol):,}\n"
@@ -87,8 +108,8 @@ def tokens(update: Update, ctx):
             break
 
     if mostrats == 0:
-        print("[LOG] Cap token mostrat.")
-        update.message.reply_text("No s'ha trobat cap token.")
+        print("[LOG] Cap token ha passat els filtres de novetat.")
+        update.message.reply_text("No s'ha trobat cap token nou amb aquests criteris.")
 
 # Dispatcher
 dispatcher = Dispatcher(bot, update_queue=None, use_context=True)
