@@ -12,7 +12,7 @@ BIRDEYE_API_KEY = os.getenv("BIRDEYE_API_KEY")
 bot = Bot(token=BOT_TOKEN)
 app = Flask(__name__)
 
-# Obtenir tokens per volum (TOP)
+# Obtenir tokens per volum
 def get_tokens_raw(limit=50):
     url = (
         "https://public-api.birdeye.so/defi/tokenlist"
@@ -27,14 +27,12 @@ def get_tokens_raw(limit=50):
         if r.status_code != 200:
             print("[LOG] Error de resposta:", r.text)
             return []
-        tokens = r.json().get("data", {}).get("tokens", [])
-        print(f"[LOG] Tokens rebuts: {len(tokens)}")
-        return tokens
+        return r.json().get("data", {}).get("tokens", [])
     except Exception as e:
         print("[LOG] Excepció a get_tokens_raw:", e)
         return []
 
-# Obtenir tokens nous
+# Obtenir tokens més nous
 def get_newest_tokens(limit=50):
     url = (
         "https://public-api.birdeye.so/defi/tokenlist"
@@ -43,15 +41,13 @@ def get_newest_tokens(limit=50):
     )
     headers = {"x-api-key": BIRDEYE_API_KEY}
     try:
-        print("[LOG] Cridant Birdeye API (tokens més nous)...")
+        print("[LOG] Cridant Birdeye API (tokens nous)...")
         r = requests.get(url, headers=headers, timeout=10)
         print(f"[LOG] Status code: {r.status_code}")
         if r.status_code != 200:
             print("[LOG] Error de resposta:", r.text)
             return []
-        tokens = r.json().get("data", {}).get("tokens", [])
-        print(f"[LOG] Tokens rebuts: {len(tokens)}")
-        return tokens
+        return r.json().get("data", {}).get("tokens", [])
     except Exception as e:
         print("[LOG] Excepció a get_newest_tokens:", e)
         return []
@@ -66,7 +62,7 @@ def format_mcap(m):
     else:
         return f"${int(m)}"
 
-# Enviar botó de refresc
+# Botó "Tornar a buscar"
 def enviar_boto_refresh(update, context, tipus):
     keyboard = [
         [InlineKeyboardButton("🔄 Tornar a buscar", callback_data=f"refresh_{tipus}")]
@@ -157,6 +153,19 @@ def nous(update: Update, ctx):
     else:
         enviar_boto_refresh(update, ctx, tipus="nous")
 
+# Comanda /help
+def help_command(update: Update, ctx):
+    text = (
+        "🆘 *Ajuda del bot de tokens de Solana*\n\n"
+        "Aquest bot et mostra tokens detectats a la plataforma [Birdeye](https://birdeye.so):\n\n"
+        "🔹 `/tokens` – Mostra tokens amb més activitat (volum alt, mcap raonable...)\n"
+        "🔹 `/nous` – Mostra tokens acabats de crear, útil per detectar memecoins\n"
+        "🔹 Botó 🔄 – Torna a buscar resultats sense escriure la comanda\n\n"
+        "💡 Només es mostren *3 tokens* per comanda per evitar saturar el xat.\n"
+        "❗ Filtres aplicats: liquidesa mínima, volum mínim i mcap màxim."
+    )
+    update.message.reply_text(text, parse_mode="Markdown", disable_web_page_preview=True)
+
 # Gestor del botó
 def refrescar(update: Update, context):
     query = update.callback_query
@@ -170,11 +179,14 @@ def refrescar(update: Update, context):
         query.message.reply_text("🔄 Tornant a buscar tokens nous...")
         nous(query, context)
 
-# Inici i dispatcher
+# Dispatcher
 dispatcher = Dispatcher(bot, update_queue=None, use_context=True)
-dispatcher.add_handler(CommandHandler("start", lambda u, c: u.message.reply_text("Hola! Prova /tokens o /nous 🪙")))
+dispatcher.add_handler(CommandHandler("start", lambda u, c: u.message.reply_text(
+    "Hola! Prova /tokens o /nous 🪙\nEscriu /help per veure què pot fer el bot."
+)))
 dispatcher.add_handler(CommandHandler("tokens", tokens))
 dispatcher.add_handler(CommandHandler("nous", nous))
+dispatcher.add_handler(CommandHandler("help", help_command))
 dispatcher.add_handler(CallbackQueryHandler(refrescar))
 
 # Webhook
