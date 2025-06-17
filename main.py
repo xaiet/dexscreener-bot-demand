@@ -28,6 +28,18 @@ def cmd_tendencia(update: Update, ctx):
     update.message.reply_text("🔍 Cercant tokens en tendència...")
     enviar_tokens_filtrats(chat_id)
 
+# Ruta per rebre actualitzacions del webhook
+@app.route(f"/{WEBHOOK_SECRET}", methods=["POST"])
+def webhook():
+    try:
+        data = request.get_json(force=True)
+        update = Update.de_json(data, bot)
+        dispatcher.process_update(update)
+        return "OK"
+    except Exception as e:
+        print("[LOG] Error processant el webhook:", e)
+        return jsonify({"error": "Error processant la petició"}), 500
+
 # Obtenir tokens per volum
 def get_tokens_raw(limit=50):
     url = (
