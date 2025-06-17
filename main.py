@@ -18,6 +18,16 @@ app = Flask(__name__)
 def show_id(update: Update, ctx):
     update.message.reply_text(f"El teu ID és: `{update.message.chat_id}`", parse_mode="Markdown")
 
+# Comanda per comprovar l'estat del bot
+def show_status(update: Update, ctx):
+    update.message.reply_text("✅ El bot està actiu i escoltant.")
+
+# Comanda per mostrar tokens tendència manualment
+def cmd_tendencia(update: Update, ctx):
+    chat_id = update.message.chat_id
+    update.message.reply_text("🔍 Cercant tokens en tendència...")
+    enviar_tokens_filtrats(chat_id)
+
 # Obtenir tokens per volum
 def get_tokens_raw(limit=50):
     url = (
@@ -152,3 +162,9 @@ if __name__ == "__main__":
     iniciar_notificacions()
     print("[LOG] Iniciant servidor Flask...")
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+
+# Dispatcher (registre de comandes Telegram)
+dispatcher = Dispatcher(bot, update_queue=None, use_context=True)
+dispatcher.add_handler(CommandHandler("id", show_id))
+dispatcher.add_handler(CommandHandler("status", show_status))
+dispatcher.add_handler(CommandHandler("tendencia", cmd_tendencia))
