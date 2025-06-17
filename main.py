@@ -154,6 +154,8 @@ def enviar_tokens_filtrats(chat_id):
         mostrats += 1
         if mostrats >= 3:
             break
+    if mostrats == 0:
+        bot.send_message(chat_id=chat_id, text="❌ No s'ha trobat cap token que compleixi els filtres ara mateix.")
 
 # Loop automàtic cada 4 hores
 def iniciar_notificacions():
