@@ -1,4 +1,4 @@
-# 📁 Estructura de fitxers suggerida:
+# 📁 Estructura de fitxers:
 # .
 # ├── main.py                 # Punt d'entrada del servidor i webhook
 # ├── commands/
@@ -23,7 +23,7 @@ from commands.status import show_status
 from commands.id import show_id
 from commands.whales import cmd_whales
 from notifier import iniciar_notificacions
-from commands.grans import cmd_grans
+from commands.grans import grans
 from commands.dormits import cmd_dormits
 from commands.volum import cmd_volum
 from commands.descompte import cmd_descompte
@@ -41,7 +41,7 @@ dispatcher.add_handler(cmd_tendencia)
 dispatcher.add_handler(show_status)
 dispatcher.add_handler(show_id)
 dispatcher.add_handler(cmd_whales)
-dispatcher.add_handler(cmd_grans)
+dispatcher.add_handler(grans)
 
 @app.route(f"/{WEBHOOK_SECRET}", methods=["POST"])
 def webhook():
