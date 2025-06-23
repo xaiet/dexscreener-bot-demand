@@ -23,6 +23,11 @@ from commands.status import show_status
 from commands.id import show_id
 from commands.whales import cmd_whales
 from notifier import iniciar_notificacions
+from commands.grans import cmd_grans
+from commands.dormits import cmd_dormits
+from commands.volum import cmd_volum
+from commands.descompte import cmd_descompte
+from commands.estrena import cmd_estrena
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "ruta-secreta")
@@ -36,6 +41,7 @@ dispatcher.add_handler(cmd_tendencia)
 dispatcher.add_handler(show_status)
 dispatcher.add_handler(show_id)
 dispatcher.add_handler(cmd_whales)
+dispatcher.add_handler(cmd_grans)
 
 @app.route(f"/{WEBHOOK_SECRET}", methods=["POST"])
 def webhook():
