@@ -9,7 +9,7 @@ BIRDEYE_API_KEY = os.getenv("BIRDEYE_API_KEY")
 
 BIRDEYE_URL = (
     "https://public-api.birdeye.so/defi/tokenlist"
-    "?sort_by=fdv&sort_type=asc&offset=0&limit=50"
+    "?sort_by=volume_24h&sort_type=desc&offset=0&limit=50"
 )
 
 HEADERS = {"x-api-key": BIRDEYE_API_KEY}
