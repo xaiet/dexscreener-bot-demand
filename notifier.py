@@ -30,9 +30,9 @@ def is_token_promising(token):
             return False
 
         if price_change_1h >= 50 or price_change_5m >= 25 or price_change_24h >= 100:
-            if 20_000 < volume_24h < 1_000_000:
-                if 10_000 < liquidity < 150_000:
-                    if market_cap and market_cap < 1_000_000:
+            if 20000 < volume_24h < 1000000:
+                if 10000 < liquidity < 150000:
+                    if market_cap and market_cap < 1000000:
                         return True
         return False
     except Exception as e:
@@ -48,21 +48,15 @@ def get_potential_x2_gems():
         promising = []
         for token in tokens:
             if is_token_promising(token):
-                msg = f"🚀 *Possible 2x Gem Detected!*
-"
-                msg += f"*Name:* {token.get('name')} ({token.get('symbol')})
-"
-                msg += f"*Price:* ${round(token.get('priceUsd', 0), 6)}
-"
-                msg += f"*1h:* {token.get('priceChange', {}).get('h1', 0)}%
-"
-                msg += f"*24h:* {token.get('priceChange', {}).get('h24', 0)}%
-"
-                msg += f"*Vol 24h:* ${int(token.get('v24hUSD', 0))}
-"
-                msg += f"*Liquidity:* ${int(token.get('liquidityUSD', 0))}
-"
-                msg += f"[🔗 Dexscreener](https://dexscreener.com/solana/{token.get('pairAddress')})"
+                msg = f"""🚀 *Possible 2x Gem Detected!*
+*Name:* {token.get('name')} ({token.get('symbol')})
+*Price:* ${round(token.get('priceUsd', 0), 6)}
+*1h:* {token.get('priceChange', {}).get('h1', 0)}%
+*24h:* {token.get('priceChange', {}).get('h24', 0)}%
+*Vol 24h:* ${int(token.get('v24hUSD', 0))}
+*Liquidity:* ${int(token.get('liquidityUSD', 0))}
+[🔗 Dexscreener](https://dexscreener.com/solana/{token.get('pairAddress')})
+"""
                 promising.append(msg)
         return promising
     except Exception as e:
