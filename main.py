@@ -8,9 +8,6 @@
 # │   └── whales.py          # Comanda /whales
 # └── notifier.py            # Notificacions automàtiques
 
-# ✅ Ara et genero tot aquest codi dividit en fitxers, començant per `main.py`
-
-# ----------- main.py -----------
 import os
 import time
 import threading
@@ -24,7 +21,6 @@ from commands.id import show_id
 from commands.whales import cmd_whales
 from notifier import iniciar_notificacions
 from commands.grans import grans
-from commands.dormits import cmd_dormits
 from commands.volum import cmd_volum
 from commands.descompte import cmd_descompte
 from commands.estrena import cmd_estrena
