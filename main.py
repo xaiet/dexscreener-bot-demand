@@ -21,9 +21,6 @@ from commands.id import show_id
 from commands.whales import cmd_whales
 from notifier import iniciar_notificacions
 from commands.grans import grans
-from commands.volum import cmd_volum
-from commands.descompte import cmd_descompte
-from commands.estrena import cmd_estrena
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "ruta-secreta")
