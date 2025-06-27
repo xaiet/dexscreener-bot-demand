@@ -21,6 +21,6 @@ def iniciar_notificacions(bot):
                             time.sleep(2)  # petit delay entre missatges
             except Exception as e:
                 print("[LOG] Error al bucle de notificació:", e)
-            time.sleep(4 * 3600)  # Esperar 4 hores
+            time.sleep(60)  # Esperar 4 hores
 
     threading.Thread(target=loop, daemon=True).start()
