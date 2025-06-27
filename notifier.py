@@ -87,7 +87,7 @@ def iniciar_notificacions(bot):
                                 time.sleep(2)
             except Exception as e:
                 print("[LOG] Error al bucle de notificació:", e)
-            time.sleep(60)  # espera 1 minut entre escanejades
+            time.sleep(2 * 600)  # espera 1 minut entre escanejades
 
     threading.Thread(target=loop, daemon=True).start()
     print("[LOG] Notificacions automàtiques iniciades.")
