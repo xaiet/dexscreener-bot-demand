@@ -35,6 +35,7 @@ dispatcher.add_handler(show_status)
 dispatcher.add_handler(show_id)
 dispatcher.add_handler(cmd_whales)
 dispatcher.add_handler(grans)
+iniciar_notificacions(bot)
 
 @app.route(f"/{WEBHOOK_SECRET}", methods=["POST"])
 def webhook():
@@ -52,7 +53,6 @@ def home():
     return "Bot actiu amb Birdeye ✅"
 
 if __name__ == "__main__":
-    iniciar_notificacions(bot)
     print("[LOG] Iniciant servidor Flask...")
     app.run(host="0.0.0.0", port=PORT)
     print("[LOG] Servidor iniciat a port", PORT)
