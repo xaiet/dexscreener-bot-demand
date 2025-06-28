@@ -9,8 +9,6 @@
 # └── notifier.py            # Notificacions automàtiques
 
 import os
-import time
-import threading
 from flask import Flask, request, jsonify
 from telegram import Bot, Update
 from telegram.ext import Dispatcher
@@ -19,17 +17,20 @@ from commands.tendencia import cmd_tendencia
 from commands.status import show_status
 from commands.id import show_id
 from commands.whales import cmd_whales
-from notifier import iniciar_notificacions
 from commands.grans import grans
+from notifier import iniciar_notificacions
 
+# Carrega variables d'entorn
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "ruta-secreta")
 PORT = int(os.getenv("PORT", 5000))
 
+# Inicialitza bot i Flask
 bot = Bot(token=BOT_TOKEN)
 app = Flask(__name__)
-
 dispatcher = Dispatcher(bot, update_queue=None, use_context=True)
+
+
 dispatcher.add_handler(cmd_tendencia)
 dispatcher.add_handler(show_status)
 dispatcher.add_handler(show_id)
@@ -55,4 +56,4 @@ def home():
 if __name__ == "__main__":
     print("[LOG] Iniciant servidor Flask...")
     app.run(host="0.0.0.0", port=PORT)
-    print("[LOG] Servidor iniciat a port", PORT)
+    print(f"[LOG] Servidor iniciat a port {PORT}")
