@@ -31,7 +31,7 @@ def score_token(token):
             score += 10
         return score
     except Exception as e:
-        print(f"[LOG] Error calculating score: {e}")
+        print(f"[LOG] Error calculant score: {e}")
         return 0
 
 
@@ -42,12 +42,19 @@ def get_best_gem():
         tokens = response.json().get("data", {}).get("tokens", [])
 
         if not tokens:
+            print("[DEBUG] No s'han rebut tokens.")
             return None
 
         scored_tokens = [(token, score_token(token)) for token in tokens]
         scored_tokens.sort(key=lambda x: x[1], reverse=True)
 
-        best_token = scored_tokens[0][0]
+        print(f"[DEBUG] S'han rebut {len(tokens)} tokens.")
+        for token, score in scored_tokens[:5]:
+            print(f"[DEBUG] {token.get('symbol')}: score = {score}")
+
+        best_token, best_score = scored_tokens[0]
+        print(f"[DEBUG] Seleccionat: {best_token.get('symbol')} amb score {best_score}")
+
         msg = f"""🚀 *Millor Gema del Moment!*
 *Name:* {best_token.get('name')} ({best_token.get('symbol')})
 *Price:* ${round(best_token.get('priceUsd', 0), 6)}
@@ -82,6 +89,8 @@ def iniciar_notificacions(bot):
                         print("[LOG] Gema enviada.")
                     else:
                         print("[LOG] Cap nova gema diferent trobada.")
+                else:
+                    print("[LOG] Variable NOTIF_CHAT_ID no definida.")
             except Exception as e:
                 print("[LOG] Error al bucle de notificació:", e)
             time.sleep(60)
