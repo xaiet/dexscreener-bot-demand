@@ -1,9 +1,9 @@
-
 import time
 import threading
 import os
 import requests
 
+# Variables d'entorn
 NOTIF_CHAT_ID = os.getenv("NOTIF_CHAT_ID")
 BIRDEYE_API_KEY = os.getenv("BIRDEYE_API_KEY")
 
@@ -13,6 +13,10 @@ BIRDEYE_URL = (
 )
 
 HEADERS = {"x-api-key": BIRDEYE_API_KEY}
+
+# Control per evitar duplicats
+notifier_started = False
+notifier_lock = threading.Lock()
 
 
 def score_token(token):
@@ -71,7 +75,15 @@ def get_best_gem():
 
 
 def iniciar_notificacions(bot):
+    global notifier_started
+    with notifier_lock:
+        if notifier_started:
+            print("[LOG] Notificació ja iniciada, s'evita duplicació.")
+            return
+        notifier_started = True
+
     def loop():
+        print("[LOG] Thread de notificació iniciat correctament.")
         last_sent = None
         while True:
             try:
