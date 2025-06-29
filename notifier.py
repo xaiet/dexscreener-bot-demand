@@ -46,7 +46,7 @@ def score_token(token):
 def get_best_gem():
     try:
         params = {
-            "sort_by": "volume_24h",
+            "sort_by": "v24hUSD",  
             "sort_type": "desc",
             "offset": 0,
             "limit": 50
