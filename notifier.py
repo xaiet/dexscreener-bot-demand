@@ -118,7 +118,7 @@ def iniciar_notificacions(bot):
                     print("[LOG] Variable NOTIF_CHAT_ID no definida.")
             except Exception as e:
                 print("[LOG] Error al bucle de notificació:", e)
-            time.sleep(60)
+            time.sleep(3600)
 
     threading.Thread(target=loop, daemon=True).start()
     print("[LOG] Notificacions automàtiques iniciades.")
