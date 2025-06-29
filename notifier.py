@@ -6,15 +6,19 @@ import requests
 # Variables d'entorn
 NOTIF_CHAT_ID = os.getenv("NOTIF_CHAT_ID")
 BIRDEYE_API_KEY = os.getenv("BIRDEYE_API_KEY")
+BIRDEYE_CHAIN = os.getenv("BIRDEYE_CHAIN", "solana")  # cadena per defecte
 
-BIRDEYE_URL = (
-    "https://public-api.birdeye.so/defi/tokenlist"
-    "?sort_by=volume_24h&sort_type=desc&offset=0&limit=50"
-)
+# Endpoint Birdeye
+BIRDEYE_URL = "https://public-api.birdeye.so/defi/tokenlist"
 
-HEADERS = {"x-api-key": BIRDEYE_API_KEY}
+# Headers correctes segons documentació
+HEADERS = {
+    "X-API-KEY": BIRDEYE_API_KEY,
+    "accept": "application/json",
+    "x-chain": BIRDEYE_CHAIN
+}
 
-# Control per evitar duplicats
+# Control per evitar inicialitzacions duplicades
 notifier_started = False
 notifier_lock = threading.Lock()
 
@@ -41,8 +45,17 @@ def score_token(token):
 
 def get_best_gem():
     try:
-        response = requests.get(BIRDEYE_URL, headers=HEADERS, timeout=10)
+        params = {
+            "sort_by": "volume_24h",
+            "sort_type": "desc",
+            "offset": 0,
+            "limit": 50
+        }
+
+        print("[DEBUG] Enviant petició a Birdeye...")
+        response = requests.get(BIRDEYE_URL, headers=HEADERS, params=params, timeout=10)
         response.raise_for_status()
+
         tokens = response.json().get("data", {}).get("tokens", [])
 
         if not tokens:
