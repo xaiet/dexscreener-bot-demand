@@ -57,3 +57,23 @@ if __name__ == "__main__":
     print("[LOG] Iniciant servidor Flask...")
     app.run(host="0.0.0.0", port=PORT)
     print(f"[LOG] Servidor iniciat a port {PORT}")
+
+# --- Inici del reporter automàtic ---
+from reporter import TokenInsightReporter
+
+if __name__ == "__main__":
+    from telegram import Bot
+    import threading
+
+    TOKEN = "EL_TEU_TOKEN_TELEGRAM"  # <-- substitueix pel teu token real
+    CHAT_ID = "EL_TEU_CHAT_ID"       # <-- substitueix pel teu chat_id real
+
+    bot = Bot(token=TOKEN)
+    reporter = TokenInsightReporter(bot, CHAT_ID)
+
+    # S'executa en un fil independent perquè no bloquegi altres funcionalitats
+    reporter_thread = threading.Thread(target=reporter.run, daemon=True)
+    reporter_thread.start()
+
+    # Aquí pots deixar el bot escoltant com fins ara o qualsevol altre loop
+    print("✅ Bot actiu amb reporter automatitzat.")
