@@ -28,7 +28,6 @@ class TokenInsightReporter:
             return
 
         message = "📈 *Tokens amb més pujada:*"
-"
         for token in top_tokens:
             reason = analyze_token(token)
             message += f"\n🔹 *{token['symbol']}* (+{token['priceChangePct']}%)\n"
@@ -38,7 +37,6 @@ class TokenInsightReporter:
         news = get_crypto_news(limit=3)
         if news:
             message += "\n📰 *Notícies destacades del món cripto:*"
-"
             for n in news:
                 message += f"• [{n['title']}]({n['url']})\n"
 
