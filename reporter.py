@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from utils.analyzer import analyze_token
 from utils.news import get_crypto_news
-from utils.filters import get_top_gainers  # ja present en el projecte
+from utils.filters import get_top_gainers 
 
 class TokenInsightReporter:
     def __init__(self, bot, chat_id):
@@ -27,7 +27,7 @@ class TokenInsightReporter:
             self.bot.send_message(chat_id=self.chat_id, text="❌ No s'han trobat tokens destacats.")
             return
 
-        message = "📈 *Tokens amb més pujada:*
+        message = "📈 *Tokens amb més pujada:*"
 "
         for token in top_tokens:
             reason = analyze_token(token)
@@ -37,7 +37,7 @@ class TokenInsightReporter:
 
         news = get_crypto_news(limit=3)
         if news:
-            message += "\n📰 *Notícies destacades del món cripto:*
+            message += "\n📰 *Notícies destacades del món cripto:*"
 "
             for n in news:
                 message += f"• [{n['title']}]({n['url']})\n"
