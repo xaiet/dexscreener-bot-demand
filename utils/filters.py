@@ -88,3 +88,6 @@ def get_filtered_tokens():
         results.append(format_token_message(name, symbol, address, price, liquidity, mcap, vol, hours_old, change_1h, change_6h, change_24h))
 
     return results
+
+
+get_top_gainers = get_filtered_tokens
