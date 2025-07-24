@@ -2,6 +2,7 @@ import time
 import threading
 import os
 import requests
+from datetime import datetime, timedelta
 
 # Variables d'entorn
 NOTIF_CHAT_ID = os.getenv("NOTIF_CHAT_ID")
@@ -46,10 +47,10 @@ def score_token(token):
 def get_best_gem():
     try:
         params = {
-            "sort_by": "v24hUSD",  
+            "sort_by": "v24hUSD",
             "sort_type": "desc",
             "offset": 0,
-            "limit": 50
+            "limit": 100  # agafem més per poder filtrar millor
         }
 
         print("[DEBUG] Enviant petició a Birdeye...")
@@ -62,10 +63,41 @@ def get_best_gem():
             print("[DEBUG] No s'han rebut tokens.")
             return None
 
-        scored_tokens = [(token, score_token(token)) for token in tokens]
+        # 🔍 Excloure tokens per nom i símbol
+        excluded_symbols = {
+            "wSOL", "WSOL", "Wrapped SOL",
+            "USDC", "USDT", "DAI", "USDH", "UXD", "cUSDC", "cUSDT",
+            "SOL", "ETH", "BTC", "wETH", "WBTC", "stSOL", "mSOL", "bSOL",
+            "WETH", "Wrapped ETH", "Wrapped BTC", "Tether", "USD Coin"
+        }
+
+        now = datetime.utcnow()
+        min_created_at = now - timedelta(hours=48)
+
+        filtered_tokens = []
+        for t in tokens:
+            symbol = t.get("symbol", "").upper()
+            name = t.get("name", "").upper()
+            created_at_ts = t.get("createdAt", 0)
+
+            # Valida nom, símbol i recència (< 48h)
+            if (
+                symbol not in excluded_symbols and
+                name not in excluded_symbols and
+                created_at_ts
+            ):
+                created_at = datetime.utcfromtimestamp(created_at_ts / 1000)
+                if created_at >= min_created_at:
+                    filtered_tokens.append(t)
+
+        if not filtered_tokens:
+            print("[DEBUG] Tots els tokens han estat exclosos per filtre.")
+            return None
+
+        scored_tokens = [(token, score_token(token)) for token in filtered_tokens]
         scored_tokens.sort(key=lambda x: x[1], reverse=True)
 
-        print(f"[DEBUG] S'han rebut {len(tokens)} tokens.")
+        print(f"[DEBUG] {len(filtered_tokens)} tokens candidats després de filtrar.")
         for token, score in scored_tokens[:5]:
             print(f"[DEBUG] {token.get('symbol')}: score = {score}")
 
