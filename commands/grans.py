@@ -19,7 +19,6 @@ def grans_handler(update: Update, context: CallbackContext):
         if not holders:
             return update.message.reply_text("No s'han trobat wallets per aquest token.")
 
-        # Ordena per saldo (balance_ui com a float si es pot)
         holders = sorted(holders, key=lambda h: float(h.get("balance_ui", 0)), reverse=True)
 
         msg = f"📊 *TOP 5 wallets del token:*\n🔗 `{address}`\n\n"
